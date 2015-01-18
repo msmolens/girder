@@ -1,0 +1,6 @@
+name: Image processing utilities
+description: >
+  Contains a library of utilities that are meant to be used by other
+  plugins for various image processing tasks. Enabling this plugin by itself
+  will not have a visible effect on the system.
+version: 0.1.0
