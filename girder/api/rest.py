@@ -516,6 +516,40 @@ class RestException(Exception):
         Exception.__init__(self, message)
 
 
+class accepts(object):  # noqa: class name
+    """
+    This is a decorator that can be placed on a REST route handler to indicate
+    which media types it can emit. A RestException is thrown if not match is
+    found between the specified media types and the media types requested by the
+    client (in the request's Accept header).
+    """
+    def __init__(self, media=None, debug=False):
+        """
+        :param media: The media type(s) that the resource can emit. If None,
+                      no matching is performed.
+        :type media: str or list of str
+        :param debug: Whether to print debug information about the media type
+                      matching.
+        :type debug: bool
+        """
+        self.media = media
+        self.debug = debug
+
+    def __call__(self, fun):
+        @six.wraps(fun)
+        def wrapped(*args, **kwargs):
+            try:
+                cherrypy.lib.cptools.accept(self.media, self.debug)
+            except cherrypy.HTTPError as e:
+                # Convert "406 Not Acceptable" error to Girder exception
+                if e.code == 406:
+                    raise RestException('Unsupported media type. %s' %
+                                        e._message, code=406)
+                raise
+            return fun(*args, **kwargs)
+        return wrapped
+
+
 class Resource(ModelImporter):
     """
     All REST resources should inherit from this class, which provides utilities
