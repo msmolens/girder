@@ -32,7 +32,9 @@ class ResourceExt(Resource):
     @describeRoute(
         Description('Run any search against a set of mongo collections.')
         .notes('Results will be filtered by permissions.')
-        .param('type', 'The name of the collection to search, e.g. "item".')
+        .param('type', 'The name of the collection to search, e.g. "item". '
+               'Specify collections defined in plugins in the format '
+               '"&lt;plugin_name&gt;.&lt;name&gt;".')
         .param('q', 'The search query as a JSON object.')
         .param('limit', "Result set size limit (default=50).", required=False,
                dataType='int')
@@ -49,28 +51,37 @@ class ResourceExt(Resource):
             'user': ['_id', 'firstName', 'lastName', 'login']
         }
         limit, offset, sort = self.getPagingParameters(params, 'name')
-        coll = params['type']
+
+        # XXX: update tests
+        collectionType = params['type']
 
         events.trigger('mongo_search.allowed_collections', info=allowed)
 
-        if coll not in allowed:
-            raise RestException('Invalid resource type: %s' % coll)
+        if collectionType not in allowed:
+            raise RestException('Invalid resource type: %s' % collectionType)
 
         try:
             query = bson.json_util.loads(params['q'])
         except ValueError:
             raise RestException('The query parameter must be a JSON object.')
 
-        model = ModelImporter().model(coll)
+        collectionName = collectionType
+        pluginName = None
+        typeList = params['type'].split('.')
+        if len(typeList) > 1:
+            pluginName = typeList[0]
+            collectionName = typeList[1]
+
+        model = ModelImporter.model(collectionName, pluginName)
         if hasattr(model, 'filterResultsByPermission'):
             cursor = model.find(
-                query, fields=allowed[coll] + ['public', 'access'])
+                query, fields=allowed[collectionType] + ['public', 'access'])
             return list(model.filterResultsByPermission(
                 cursor, user=self.getCurrentUser(), level=AccessType.READ,
                 limit=limit, offset=offset, removeKeys=('public', 'access')))
         else:
-            return list(model.find(query, fields=allowed[coll], limit=limit,
-                                   offset=offset))
+            return list(model.find(query, fields=allowed[collectionType],
+                                   limit=limit, offset=offset))
 
 
 def load(info):
