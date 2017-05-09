@@ -7,13 +7,18 @@ Vagrant.configure("2") do |config|
 
   config.vm.box = "ubuntu/trusty64"
   config.vm.network "forwarded_port", guest: 8080, host: 9080
+  config.vm.network "forwarded_port", guest: 27017, host: 27017
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+  config.vm.synced_folder "..", "/home/vagrant/girder/plugins/item_tasks"
   config.vm.provider :virtualbox do |vb|
     vb.name = "it_fullstack_dev"
     vb.customize ["modifyvm", :id, "--memory", 2048]
     vb.customize ["modifyvm", :id, "--cpus", 2]
   end
 
-  config.vm.provision "ansible" do |ansible|
+  provisioner_type = ENV["VAGRANT_ANSIBLE_LOCAL"] ? "ansible_local" : "ansible"
+
+  config.vm.provision provisioner_type do |ansible|
     ansible.playbook = "playbooks/site.yml"
     ansible.galaxy_role_file = "playbooks/requirements.yml"
   end

@@ -28,6 +28,7 @@
         name: "{{ item }}"
       with_items:
         - acl
+        - git
       become: yes
       become_user: root
 
