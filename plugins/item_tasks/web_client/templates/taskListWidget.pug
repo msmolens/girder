@@ -10,11 +10,19 @@ if searching
 
 if hasTasks
   .panel.panel-default.g-task-list-task-items
-    .list-group
+    ul.list-group
       each task in collection.models
-        a.list-group-item.g-execute-task-link(href=`#item_task/${task.id}/run`)
-          h4.list-group-item-heading.g-execute-task-link-header= task.name()
+        - var tags = task.get('meta').itemTaskTags || []
+        //a.list-group-item.g-execute-task-link(href=`#item_task/${task.id}/run`)
+        li.list-group-item.g-execute-task-link
+          h4.list-group-item-heading.g-execute-task-link-header
+            a(href=`#item_task/${task.id}/run`)= task.name()
           .list-group-item-text.g-execute-task-link-body= task.get('description')
+          if tags
+            .g-task-list-item-tag-container
+            each tag in tags
+              span.label.label-default.g-task-list-item-tag= tag
+              | &#x20;
     if collection.hasNextPage()
       .panel-footer.g-task-list-task-items-footer
         a.g-task-list-task-items-next-page

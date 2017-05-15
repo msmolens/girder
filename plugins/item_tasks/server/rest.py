@@ -20,6 +20,7 @@ class ItemTask(Resource):
 
         self.route('GET', (), self.listTasks)
         self.route('GET', ('search',), self.search)
+        # self.route('GET', ('tags',), self.listTags)
         self.route('POST', (':id', 'execution'), self.executeTask)
         self.route('POST', (':id', 'slicer_cli_description'), self.runSlicerCliDescription)
         self.route('PUT', (':id', 'slicer_cli_xml'), self.setSpecFromXml)
@@ -29,13 +30,22 @@ class ItemTask(Resource):
     @access.public
     @autoDescribeRoute(
         Description('List all available tasks that can be executed.')
+        .jsonParam('tags', 'Constrain to tasks with all specified tags.', required=False,
+                   requireArray=True)
         .pagingParams(defaultSort='name')
     )
     @filtermodel(model='item')
-    def listTasks(self, limit, offset, sort, params):
-        cursor = self.model('item').find({
+    def listTasks(self, tags, limit, offset, sort, params):
+        query = {
             'meta.isItemTask': {'$exists': True}
-        }, sort=sort)
+        }
+
+        if tags:
+            query.update({
+                'meta.itemTaskTags': {'$all': tags}
+            })
+
+        cursor = self.model('item').find(query, sort=sort)
 
         return list(self.model('item').filterResultsByPermission(
             cursor, self.getCurrentUser(), level=AccessType.READ, limit=limit, offset=offset,
@@ -51,9 +61,24 @@ class ItemTask(Resource):
         user = self.getCurrentUser()
         itemModel = self.model('item')
 
+        # Partition search terms and tags
+        terms = []
+        tags = []
+        for term in q.split():
+            if term.startswith('[') and term.endswith(']'):
+                tags.append(term[1:-1])
+            else:
+                terms.append(term)
+
+        q = ' '.join(terms)
+
         filters = {
             'meta.isItemTask': {'$exists': True}
         }
+        if tags:
+            filters.update({
+                'meta.itemTaskTags': {'$all': tags}
+            })
 
         cursor = itemModel.textSearch(
             query=q, filters=filters, user=user, limit=limit, offset=offset)
@@ -64,6 +89,28 @@ class ItemTask(Resource):
         return list(itemModel.filterResultsByPermission(
             cursor, user, level=AccessType.READ, limit=0, offset=0,
             flags=constants.ACCESS_FLAG_EXECUTE_TASK))
+
+    # @access.public
+    # @autoDescribeRoute(
+    #     Description('Search for tags on tasks.')
+    #     .pagingParams(defaultSort=None, defaultLimit=100)
+    # )
+    # def listTags(self, limit, offset, params):
+    #     user = self.getCurrentUser()
+    #     itemModel = self.model('item')
+    #
+    #     cursor = itemModel.collection.aggregate([
+    #         {'$match': {
+    #             'meta.isItemTask': {'$exists': True}
+    #         }},
+    #         {'$unwind': '$meta.itemTaskTags'},
+    #         {'$group': {
+    #             '_id': '$meta.itemTaskTags',
+    #             'count': {'$sum': 1}
+    #         }},
+    #         {'$sort': {'count': -1}}
+    #     ])
+    #     return list(cursor)
 
     def _validateTask(self, item):
         """
