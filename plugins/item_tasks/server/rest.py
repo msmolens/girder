@@ -20,7 +20,7 @@ class ItemTask(Resource):
 
         self.route('GET', (), self.listTasks)
         self.route('GET', ('search',), self.search)
-        # self.route('GET', ('tags',), self.listTags)
+        self.route('GET', ('tags',), self.listTags)
         self.route('POST', (':id', 'execution'), self.executeTask)
         self.route('POST', (':id', 'slicer_cli_description'), self.runSlicerCliDescription)
         self.route('PUT', (':id', 'slicer_cli_xml'), self.setSpecFromXml)
@@ -90,27 +90,52 @@ class ItemTask(Resource):
             cursor, user, level=AccessType.READ, limit=0, offset=0,
             flags=constants.ACCESS_FLAG_EXECUTE_TASK))
 
-    # @access.public
-    # @autoDescribeRoute(
-    #     Description('Search for tags on tasks.')
-    #     .pagingParams(defaultSort=None, defaultLimit=100)
-    # )
-    # def listTags(self, limit, offset, params):
-    #     user = self.getCurrentUser()
-    #     itemModel = self.model('item')
-    #
-    #     cursor = itemModel.collection.aggregate([
-    #         {'$match': {
-    #             'meta.isItemTask': {'$exists': True}
-    #         }},
-    #         {'$unwind': '$meta.itemTaskTags'},
-    #         {'$group': {
-    #             '_id': '$meta.itemTaskTags',
-    #             'count': {'$sum': 1}
-    #         }},
-    #         {'$sort': {'count': -1}}
-    #     ])
-    #     return list(cursor)
+    @access.public
+    @autoDescribeRoute(
+        Description('Search for tags on tasks.')
+        .pagingParams(defaultSort=None, defaultLimit=100)
+    )
+    def listTags(self, limit, offset, params):
+        user = self.getCurrentUser()
+        itemModel = self.model('item')
+
+        cursor = itemModel.find({
+            'meta.isItemTask': {'$exists': True}
+        })
+
+        # TODO remove unnecessary fields
+        cursor = itemModel.filterResultsByPermission(
+            cursor, user, level=AccessType.READ, limit=0, offset=0,
+            flags=constants.ACCESS_FLAG_EXECUTE_TASK)
+
+        # TODO don't store all in memory
+        ids = [item['_id'] for item in cursor]
+
+        cursor = itemModel.collection.aggregate([
+            {'$match': {
+                '_id': {'$in': ids}
+            }},
+            {'$unwind': '$meta.itemTaskTags'},
+            {'$group': {
+                '_id': '$meta.itemTaskTags',
+                'count': {'$sum': 1}
+            }},
+            {'$sort': {'count': -1}}
+        ])
+
+        # cursor = itemModel.collection.aggregate([
+        #     {'$match': {
+        #         'meta.isItemTask': {'$exists': True}
+        #     }},
+        #     {'$unwind': '$meta.itemTaskTags'},
+        #     {'$group': {
+        #         '_id': '$meta.itemTaskTags',
+        #         'count': {'$sum': 1}
+        #     }},
+        #     {'$sort': {'count': -1}}
+        # ])
+
+        return list(cursor)
 
     def _validateTask(self, item):
         """

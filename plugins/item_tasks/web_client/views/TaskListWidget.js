@@ -24,10 +24,13 @@ var TaskListWidget = View.extend({
      *   Information about the current search. Expected to have the following
      *   properties:
      *   - query {string} - The current search query, or null.
+     * @param {array} settings.tags
+     *   List of tags.
      */
     initialize: function (settings) {
         this.collection = settings.collection;
         this.search = settings.search;
+        this.tags = settings.tags;
         this.listenTo(this.collection, 'reset', this.render);
     },
 
@@ -35,7 +38,8 @@ var TaskListWidget = View.extend({
         this.$el.html(template({
             collection: this.collection,
             searching: !_.isNull(this.search.query),
-            query: this.search.query
+            query: this.search.query,
+            tags: this.tags
         }));
 
         return this;

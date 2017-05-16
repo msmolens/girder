@@ -6,8 +6,8 @@ import TaskRunView from './views/TaskRunView';
 import ItemModel from 'girder/models/ItemModel';
 import JobModel from 'girder_plugins/jobs/models/JobModel';
 
-router.route('item_tasks', 'itemTaskList', () => {
-    events.trigger('g:navigateTo', TaskListView);
+router.route('item_tasks', 'itemTaskList', (params) => {
+    events.trigger('g:navigateTo', TaskListView, params || {});
     events.trigger('g:highlightItem', 'TasksView');
 });
 

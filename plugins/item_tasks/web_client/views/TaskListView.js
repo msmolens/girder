@@ -24,7 +24,7 @@ var TaskListView = View.extend({
         }
     },
 
-    initialize: function () {
+    initialize: function (settings) {
         this.collection = new ItemTaskCollection();
 
         // Store collection parameters that search mode overrides
@@ -34,6 +34,7 @@ var TaskListView = View.extend({
         };
 
         this.search = {query: null};
+        this.tags = settings.tags ? settings.tags.split(';') : null;
 
         this.paginateWidget = new PaginateWidget({
             collection: this.collection,
@@ -43,10 +44,17 @@ var TaskListView = View.extend({
         this.taskListWidget = new TaskListWidget({
             collection: this.collection,
             search: this.search,
+            tags: this.tags,
             parentView: this
         });
 
-        this.collection.fetch()
+        let params = {};
+
+        if (this.tags) {
+            params.tags = JSON.stringify(this.tags);
+        }
+
+        this.collection.fetch(params)
             .then(() => {
                 this.render();
 

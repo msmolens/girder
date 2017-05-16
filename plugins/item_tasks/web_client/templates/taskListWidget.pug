@@ -7,13 +7,19 @@ if searching
     else
       i.icon-attention
       |  No tasks matching your search term were found.
+else if tags && tags.length
+  .g-task-list-search-status
+    i.icon-tags
+    |  Tasks tagged with&nbsp;
+    each tag in tags
+      a.label.label-default.g-task-list-tag(href=`#item_tasks?tags=${tag}`)= tag
+      | &#x20;
 
 if hasTasks
   .panel.panel-default.g-task-list-task-items
     ul.list-group
       each task in collection.models
         - var tags = task.get('meta').itemTaskTags || []
-        //a.list-group-item.g-execute-task-link(href=`#item_task/${task.id}/run`)
         li.list-group-item.g-execute-task-link
           h4.list-group-item-heading.g-execute-task-link-header
             a(href=`#item_task/${task.id}/run`)= task.name()
@@ -21,7 +27,7 @@ if hasTasks
           if tags
             .g-task-list-item-tag-container
             each tag in tags
-              span.label.label-default.g-task-list-item-tag= tag
+              a.label.label-default.g-task-list-tag(href=`#item_tasks?tags=${tag}`)= tag
               | &#x20;
     if collection.hasNextPage()
       .panel-footer.g-task-list-task-items-footer
