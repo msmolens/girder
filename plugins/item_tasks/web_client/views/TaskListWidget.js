@@ -1,13 +1,11 @@
-import _ from 'underscore';
 import View from 'girder/views/View';
 
 import template from '../templates/taskListWidget.pug';
+import '../stylesheets/taskListTag.styl';
 import '../stylesheets/taskListWidget.styl';
 
 /**
- * View that displays a list of item tasks. The list can be paged through.
- * When a search is active, the view displays relevant extra information, such
- * as a note if no matching item tasks were found.
+ * View that displays a list of item tasks.
  */
 var TaskListWidget = View.extend({
     events: {
@@ -20,26 +18,14 @@ var TaskListWidget = View.extend({
     /**
      * @param {ItemTaskCollection} settings.collection
      *   The collection of item tasks.
-     * @param {object} settings.search
-     *   Information about the current search. Expected to have the following
-     *   properties:
-     *   - query {string} - The current search query, or null.
-     * @param {array} settings.tags
-     *   List of tags.
      */
     initialize: function (settings) {
-        this.collection = settings.collection;
-        this.search = settings.search;
-        this.tags = settings.tags;
         this.listenTo(this.collection, 'reset', this.render);
     },
 
     render: function () {
         this.$el.html(template({
-            collection: this.collection,
-            searching: !_.isNull(this.search.query),
-            query: this.search.query,
-            tags: this.tags
+            collection: this.collection
         }));
 
         return this;

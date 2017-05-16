@@ -5,3 +5,7 @@
       input.form-control.input-sm.g-task-search-field(type="text", placeholder="Search tasks...")
 
 .g-task-list-widget-container
+
+if collection.isEmpty()
+  i.icon-attention
+  |  No tasks are available.

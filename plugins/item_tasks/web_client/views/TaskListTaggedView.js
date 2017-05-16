@@ -1,29 +1,24 @@
-import router from 'girder/router';
 import View from 'girder/views/View';
 import PaginateWidget from 'girder/views/widgets/PaginateWidget';
 import TaskListWidget from './TaskListWidget';
 import ItemTaskCollection from '../collections/ItemTaskCollection';
 
-import template from '../templates/taskList.pug';
-import '../stylesheets/taskList.styl';
+import template from '../templates/taskListTagged.pug';
+import '../stylesheets/taskListTag.styl';
+import '../stylesheets/taskListTagged.styl';
 
 /**
- * View for a list of tasks. The list can be paged through. The user can search
- * for tasks using a search box. Clicking a task's tag shows a list of tasks which
- * have that tag.
+ * View for a list of tasks which have all of a list of specified tags. The
+ * search results can be paged through.
  */
-var TaskListView = View.extend({
-    events: {
-        'submit .g-task-search-form': function (e) {
-            e.preventDefault();
-            const query = this.$('.g-task-search-field').val().trim();
-            if (query) {
-                router.navigate(`item_tasks/search?q=${query}`, {trigger: true});
-            }
-        }
-    },
+var TaskListTaggedView = View.extend({
+    /*
+     * @param {string} settings.tags
+     *   A semicolon-delimited list of tags.
+     */
+    initialize: function (settings) {
+        this.tags = settings.tags ? settings.tags.split(';') : null;
 
-    initialize: function () {
         this.collection = new ItemTaskCollection();
 
         this.paginateWidget = new PaginateWidget({
@@ -36,7 +31,11 @@ var TaskListView = View.extend({
             parentView: this
         });
 
-        this.collection.fetch()
+        const params = {
+            tags: JSON.stringify(this.tags)
+        };
+
+        this.collection.fetch(params)
             .then(() => {
                 this.render();
 
@@ -49,7 +48,8 @@ var TaskListView = View.extend({
 
     render: function () {
         this.$el.html(template({
-            collection: this.collection
+            collection: this.collection,
+            tags: this.tags
         }));
 
         this.paginateWidget.setElement(this.$('.g-task-pagination')).render();
@@ -59,4 +59,4 @@ var TaskListView = View.extend({
     }
 });
 
-export default TaskListView;
+export default TaskListTaggedView;

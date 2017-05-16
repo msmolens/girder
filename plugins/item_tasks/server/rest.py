@@ -61,33 +61,16 @@ class ItemTask(Resource):
         user = self.getCurrentUser()
         itemModel = self.model('item')
 
-        # Partition search terms and tags
-        terms = []
-        tags = []
-        for term in q.split():
-            if term.startswith('[') and term.endswith(']'):
-                tags.append(term[1:-1])
-            else:
-                terms.append(term)
-
-        q = ' '.join(terms)
-
         filters = {
             'meta.isItemTask': {'$exists': True}
         }
-        if tags:
-            filters.update({
-                'meta.itemTaskTags': {'$all': tags}
-            })
 
-        cursor = itemModel.textSearch(
-            query=q, filters=filters, user=user, limit=limit, offset=offset)
+        cursor = itemModel.textSearch(query=q, filters=filters, user=user)
 
         # AccessControlledModel.textSearch() already runs filterResultsByPermission(),
-        # but doesn't accept flags. Filter the results again to apply the flags, but
-        # ignore the paging parameters as they were already applied.
+        # but doesn't accept flags. Filter the results again to apply the flags.
         return list(itemModel.filterResultsByPermission(
-            cursor, user, level=AccessType.READ, limit=0, offset=0,
+            cursor, user, level=AccessType.READ, limit=limit, offset=offset,
             flags=constants.ACCESS_FLAG_EXECUTE_TASK))
 
     @access.public

@@ -1,21 +1,4 @@
-- var hasTasks = !collection.isEmpty()
-if searching
-  .g-task-list-search-status
-    if hasTasks
-      i.icon-search
-      |  Search results for tasks containing "#{query}"
-    else
-      i.icon-attention
-      |  No tasks matching your search term were found.
-else if tags && tags.length
-  .g-task-list-search-status
-    i.icon-tags
-    |  Tasks tagged with&nbsp;
-    each tag in tags
-      a.label.label-default.g-task-list-tag(href=`#item_tasks?tags=${tag}`)= tag
-      | &#x20;
-
-if hasTasks
+if !collection.isEmpty()
   .panel.panel-default.g-task-list-task-items
     ul.list-group
       each task in collection.models
@@ -25,10 +8,10 @@ if hasTasks
             a(href=`#item_task/${task.id}/run`)= task.name()
           .list-group-item-text.g-execute-task-link-body= task.get('description')
           if tags
-            .g-task-list-item-tag-container
-            each tag in tags
-              a.label.label-default.g-task-list-tag(href=`#item_tasks?tags=${tag}`)= tag
-              | &#x20;
+            .g-task-list-tag-container
+              each tag in tags
+                a.label.label-default.g-task-list-tag(href=`#item_tasks/tagged?tags=${tag}`)= tag
+                | &#x20;
     if collection.hasNextPage()
       .panel-footer.g-task-list-task-items-footer
         a.g-task-list-task-items-next-page
@@ -36,6 +19,3 @@ if hasTasks
     else
       .panel-footer.g-task-list-task-items-footer
         | End of list
-else if !searching
-  i.icon-attention
-  |  No tasks are available.
